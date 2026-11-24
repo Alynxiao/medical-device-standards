@@ -66,6 +66,11 @@ Windows 双击 `启动.bat`；Mac / Linux 用 `python3 run.py`。
 - 条件可叠加：「试验方法 + 金属」只看金属类的试验方法标准
 - 点标题打开官方页面看原文（这一步要联网）
 
+## 另外两个技能
+
+- [医疗器械法规库](https://github.com/Alynxiao/china-medical-device-regs) — 国家药监局法规文件汇总，可离线检索
+- [医疗器械产品法规标准清单生成器](https://github.com/Alynxiao/device-compliance-dossier) — 输入产品名，出注册申报用的清单
+
 ## 说明
 
 数据均来自官方公开栏目，本仓库只做汇总与索引，标准正文以官方发布为准。
