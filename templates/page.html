@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITLE__ 数据更新至 __UPDATED__</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#fff; --ink:#0f1e35; --muted:#6b7a90; --line:#e2e8f1;
+    --brand:#12559e; --brand-soft:#e8f1fd;
+    --shadow:0 1px 2px rgba(16,32,64,.05), 0 6px 18px rgba(16,32,64,.04);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;height:100vh;overflow:hidden;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);
+       font:14px/1.6 "Segoe UI","Microsoft YaHei",system-ui,sans-serif}
+  header{flex:0 0 auto;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 10px rgba(16,32,64,.04)}
+  /* 第一行：标题 + 状态胶囊 + 数据日期；第二行：整条搜索框 */
+  .hd{max-width:1560px;margin:0 auto;padding:10px 22px 7px;display:flex;align-items:center;gap:9px;flex-wrap:nowrap}
+  h1{margin:0 8px 0 0;font-size:18px;font-weight:700;white-space:nowrap;letter-spacing:.2px}
+  .pill{font-size:13px;color:#33455e;background:#fff;border:1px solid var(--line);border-radius:20px;
+        padding:5px 13px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+  .pill:hover{border-color:var(--brand);color:var(--brand)}
+  .pill b{font-weight:600;font-size:12.5px;color:var(--muted)}
+  .pill.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .pill.on b{color:#dbe9fb}
+  .grow{flex:1}
+  .upd{font-size:11.5px;color:#a8b4c4;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .bar{max-width:1560px;margin:0 auto;padding:0 22px 10px}
+  #q{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 15px;font-size:14.5px;outline:none;
+     transition:.15s;font-family:inherit}
+  #q:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  #q::placeholder{color:#a8b4c4}
+
+  .wrap{flex:1;display:flex;min-height:0;max-width:1560px;width:100%;margin:0 auto;padding:14px 22px 0;gap:20px}
+  aside{width:276px;flex:0 0 auto;overflow-y:auto;overscroll-behavior:contain;padding-bottom:24px}
+  main{flex:1;min-width:0;min-height:0;overflow-y:auto;padding-bottom:48px;overscroll-behavior:contain}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px;box-shadow:var(--shadow)}
+  .panel+.panel{margin-top:9px}
+  .ptitle{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.9px;margin:2px 8px 6px}
+  .btn{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;border-radius:7px;
+       background:none;padding:6px 8px;font-size:13.2px;color:var(--ink);cursor:pointer;text-align:left;
+       font-family:inherit;line-height:1.45}
+  .btn:hover{background:var(--brand-soft)}
+  .btn.on{background:var(--brand);color:#fff}
+  .btn .n{font-size:11px;color:var(--muted);background:var(--bg);border-radius:20px;padding:1px 6px;margin-left:6px;flex:0 0 auto}
+  .btn.on .n{background:rgba(255,255,255,.24);color:#fff}
+  .btn.lvl1{font-size:13.8px;font-weight:600;padding:8px}
+  .sub{padding:2px 0 4px 9px;margin:0 0 2px 7px;border-left:2px solid var(--line)}
+  .btn.lvl2{font-size:12.6px;padding:5px 8px;color:#33455e}
+  .btn.lvl2.on{color:#fff}
+
+  /* 主区 = 「面包屑（固定一行）」+「列表（自己滚）」上下两段。
+     面包屑不放滚动容器里：放进去只能靠 sticky 覆盖，滚动时卡片会从它底下糊过去，
+     看着就像被压住。拆成两段后它始终在列表上方，物理上不可能重叠。 */
+  .maincol{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+  .crumbs{flex:0 0 auto;display:flex;flex-wrap:wrap;gap:7px;align-items:center;
+          font-size:12.5px;color:var(--muted);margin:0 0 10px}
+  .chip{background:#fff;border:1px solid var(--line);border-radius:14px;padding:3px 10px;cursor:pointer;color:#33455e}
+  .chip:hover{border-color:var(--brand);color:var(--brand)}
+
+  /* 卡片：星标在左、状态色做左边框 */
+  .card{display:flex;gap:4px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
+        border-left:3px solid #dde5ef;border-radius:10px;padding:10px 14px 10px 7px;margin-bottom:8px;
+        box-shadow:var(--shadow);transition:.12s}
+  .card:hover{border-color:#c9d7ea;border-left-color:#c9d7ea}
+  .card.s0{border-left-color:#4c9e74}
+  .card.s1{border-left-color:#4a90d9}
+  .card.s2{border-left-color:#e0a03a}
+  .fv{flex:0 0 auto;border:0;background:none;cursor:pointer;font-size:17px;line-height:1.3;
+      color:#cdd7e4;padding:0 4px;border-radius:6px;font-family:inherit}
+  .fv:hover{color:#f0b429;background:#fffbf0}
+  .fv.on{color:#f0b429}
+  .card .body{flex:1;min-width:0}
+  .card .t{font-size:14.5px;line-height:1.5;font-weight:600}
+  .card .t a{color:var(--ink);text-decoration:none}
+  .card .t a:hover{color:var(--brand);text-decoration:underline}
+  .card .m{font-size:12px;color:var(--muted);margin-top:3px;font-weight:400}
+  /* 适用范围：默认一行（-webkit-line-clamp），点击展开全文。这是官方原文，研发看「用什么材料」靠它 */
+  .card .sc{margin-top:4px;font-size:12px;line-height:1.6;color:var(--muted);cursor:pointer;
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;opacity:.8}
+  .card .sc:hover{opacity:1;color:var(--ink)}
+  .card .sc.open{display:block;-webkit-line-clamp:unset;opacity:1;color:var(--ink)}
+  .tag{display:inline-block;font-size:11px;padding:1px 6px;border:1px solid #e6d3a8;background:#fdf6e3;color:#8a6512;
+       border-radius:4px;margin-left:8px;vertical-align:1px;white-space:nowrap}
+  .st{display:inline-block;padding:0 6px;border-radius:4px;font-size:11.5px;margin-right:4px}
+  .st.s0{background:#e7f4ec;color:#1a6b3c}
+  .st.s1{background:#e8f1fd;color:#12559e}
+  .st.s2{background:#fdf0e3;color:#9a5b12}
+  .st.s3{background:#f0f2f6;color:#7b8798}
+
+  /* 「这条官方能看正文」的眼睛：只标能给正文的，不标能看目录的。
+     绿色 + 悬停提示；不写成按钮，避免跟标题点击抢动作（正文走官方页那条路）。 */
+  .eye{display:inline-flex;vertical-align:-2px;margin-left:7px;color:#4c9e74;text-decoration:none}
+  .eye:hover{color:#1a6b3c}
+
+  /* 命中高亮：两种位置两种颜色。
+     黄色=标准号或名称里命中（这份标准本身就是讲这个的）；
+     蓝色=只在「适用范围」原文里提到（正文里带了一句，不等于专门讲它）。
+     颜色分开是为了让人一眼判断该先看哪条，不是为了好看。 */
+  mark.hN{background:#ffe27a;color:#4a3600;padding:0 1px;border-radius:2px;font-weight:700}
+  mark.hS{background:#dbe9fb;color:#0d4a8f;padding:0 1px;border-radius:2px;font-weight:600}
+  .legend{display:inline-flex;gap:12px;align-items:center;font-size:12px;color:var(--muted);
+          margin-left:8px;cursor:default}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+
+  .pager{display:flex;gap:6px;flex-wrap:wrap;padding:14px 0}
+  .pager button{border:1px solid var(--line);background:#fff;padding:5px 11px;cursor:pointer;border-radius:8px;
+                font-size:13px;color:#33455e;font-family:inherit}
+  .pager button:hover{border-color:var(--brand);color:var(--brand)}
+  .pager button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .empty{padding:40px 20px;color:var(--muted);font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:12px}
+  /* 收录范围、数据来源、出身声明、二维码都在这一块里 —— 脚注就该只有一块，
+     不要拆成两张卡片把数据来源和更新日期各写一遍。二维码 base64 内嵌，断网也能显示；
+     assets/qrcode.jpg 不在时右边那格自然空着，不会出现碎图。 */
+  .note{margin-top:22px;padding:12px 16px 12px 14px;border-radius:12px;background:#fff;border:1px solid var(--line);
+        font-size:12px;color:#9aa7b8;line-height:1.9;display:flex;gap:18px;align-items:center}
+  .note-text{flex:1;min-width:0}
+  .note-text b{font-weight:600;color:var(--ink)}
+  .cr-qr{flex:0 0 auto;text-align:center}
+  .cr-qr img{width:72px;height:72px;display:block;border-radius:6px;border:1px solid var(--line)}
+  .cr-qr-tip{font-size:10px;color:#9aa7b8;margin-top:3px;line-height:1.2}
+  @media(max-width:640px){
+    .note{flex-direction:column;align-items:flex-start;gap:10px}
+    .cr-qr{text-align:left}
+  }
+  @media(max-width:900px){
+    aside{display:none}
+    .wrap{padding:12px 12px 0}
+    .upd{display:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="hd">
+    <h1>__TITLE__</h1>
+    <span class="pill on" data-s="">全部 <b id="nAll">0</b></span>
+    <span class="pill" data-s="现行">现行 <b id="n1">0</b></span>
+    <span class="pill" data-s="即将实施">即将实施 <b id="n2">0</b></span>
+    <span class="pill" data-s="征求意见中">征求意见稿 <b id="n4">0</b></span>
+    <span class="grow"></span>
+    <span class="upd">数据更新至 __UPDATED__，由技能 medical-device-standards V__VERSION__ 生成。</span>
+  </div>
+  <div class="bar">
+    <input id="q" type="search" placeholder="搜标准号、名称或适用范围；多个词用空格隔开表示都要有（例如：髋关节 聚乙烯）">
+  </div>
+</header>
+
+<div class="wrap">
+  <aside>
+    <div class="panel">
+      <div class="ptitle">我的</div>
+      <div id="f_mine"></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">按用途</div>
+      <div id="f_role"></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">主题</div>
+      <div id="f_area"></div>
+    </div>
+  </aside>
+  <div class="maincol">
+  <div class="crumbs" id="crumbs"></div>
+  <main>
+    <div id="list"></div>
+    <div class="pager" id="pager"></div>
+    <div class="note">
+      <div class="note-text">
+        正文能否查看或下载取决于来源：征求意见稿可下载 PDF，国标可在线查看，行业标准官方不提供；带眼睛的就是能看正文的。<br>
+        本技能由 <b>#公众号：医械研发</b> 原创并维护；数据取自国家药品监督管理局医疗器械标准管理中心、全国标准信息公共服务平台。<br>
+        仅供检索参考，如与官方发布不一致，一律以官方为准。
+      </div>
+      <div class="cr-qr"><img src="__QRCODE__" alt="公众号：医械研发"><div class="cr-qr-tip">扫码关注</div></div>
+    </div>
+  </main>
+  </div>
+</div>
+
+<script>
+const DATA = __DATA__;
+const STATS = __STATS__;
+const PER = 50;
+const state = {q:"", nmpa:"", status:"", cat1:"", mine:"", role:"", mat:"", page:1};
+// 哪些卡片的「适用范围」被点开了。用独立集合记住，重渲染后仍保持展开
+const EXP = new Set();
+
+// ---- 俗称 / 缩写 → 库里的正式叫法 ----
+// 左边写研发嘴上会说的词（全小写），右边写库里实际的写法。搜 PTFE 就自动带上「聚四氟乙烯」。
+// 只往里加「确实同义、而且库里不这么写」的词。同义词给太宽会误命中——比如「植入物→植入」
+// 会把所有含「植入」的标准全捞进来，那种别加。
+const ALIAS = {
+  "ptfe": ["聚四氟乙烯"],
+  "teflon": ["聚四氟乙烯"],
+  "特氟龙": ["聚四氟乙烯"],
+  "铁氟龙": ["聚四氟乙烯"],
+  "eptfe": ["膨体聚四氟乙烯"],
+  "uhmwpe": ["超高分子量聚乙烯"],
+  "peek": ["聚醚醚酮"],
+  "pmma": ["聚甲基丙烯酸甲酯","骨水泥"],
+  "pvc": ["聚氯乙烯"],
+  "硅胶": ["硅橡胶"],
+  "骨钉": ["接骨螺钉","骨螺钉"],
+  "骨板": ["接骨板"],
+  "心脏支架": ["血管支架"],
+  "冠脉支架": ["血管支架","冠状动脉支架"],
+  "人工关节": ["关节假体"],
+  "全髋": ["髋关节"],
+  "全膝": ["膝关节"],
+  "tc4": ["钛合金"],
+  "ti6al4v": ["钛合金"],
+  "3d打印": ["增材制造"],
+  "三维打印": ["增材制造"],
+  "生物相容性": ["生物学评价"],
+  "生物安全性": ["生物学评价"],
+  "隐形眼镜": ["接触镜"],
+  "美瞳": ["接触镜"],
+  "核磁": ["磁共振"],
+  "骨水泥": ["骨水泥","聚甲基丙烯酸甲酯"],
+  "缝合线": ["缝合线","缝线"]
+};
+// 搜索词拆成多个词：空格隔开 = 这些词都要有（且的关系）。
+// 顺带把纯标点丢掉，否则「9706 / 髋关节」里的斜杠会被当成一个词，把结果直接清零。
+function tokensOf(q){
+  return String(q||"").toLowerCase().split(/\s+/)
+    .map(s=>s.replace(/^[\/、，,；;：:（）()]+|[\/、，,；;：:（）()]+$/g,""))
+    .filter(s=>s && /[0-9a-z\u4e00-\u9fa5]/.test(s));
+}
+// 一个输入词在库里可能对应的所有写法：它自己 + 别名（都转小写再比）
+function termsOf(tok){
+  return [tok].concat((ALIAS[tok]||[]).map(s=>s.toLowerCase()));
+}
+// 「这条点过去能不能看到正文」——只按官方实际做到的判，不猜：
+//  征求意见稿：官方详情页挂《征求意见稿.pdf》（663 条实测全有附件）
+//  强制性国标 GB：国家标准全文公开系统有「在线预览」（实测 GB 9706.1-2020 可看）
+//  GB/T、GB/Z：采了 ISO/IEC 的，官方以版权为由不提供在线阅读；没采标的能看
+//  YY、YY/T：官方从不公开正文，标管中心只能看目录信息
+function canView(r){
+  if(r.status==="征求意见中") return true;
+  const c=(r.code||"").toUpperCase();
+  if(c.startsWith("GB ")) return true;
+  if(c.startsWith("GB/T")||c.startsWith("GB/Z")) return !(r.adopt||"").trim();
+  return false;
+}
+// GB 系的正文不在标管中心那页，得去「国家标准全文公开系统」按标准号查，
+// 所以眼睛不能只当标记——点它要直接落到能看的地方，否则等于骗人。
+const OPENSTD="https://openstd.samr.gov.cn/bzgk/std/std_list?p.p1=0&p.p90=circulation_date&p.p91=desc&p.p2=";
+function viewHref(r){
+  const c=(r.code||"").toUpperCase();
+  if(c.startsWith("GB ")) return OPENSTD+encodeURIComponent(r.code);
+  if((c.startsWith("GB/T")||c.startsWith("GB/Z")) && !(r.adopt||"").trim())
+    return OPENSTD+encodeURIComponent(r.code);
+  return r.url;                    // 征求意见稿：官方详情页就挂着 PDF
+}
+const EYE_SVG='<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M12 5c-5 0-9.3 3.4-11 7 1.7 3.6 6 7 11 7s9.3-3.4 11-7c-1.7-3.6-6-7-11-7zm0 11.5a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9zm0-2a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>';
+function eyeOf(r){
+  const c=(r.code||"").toUpperCase();
+  const gb = c.startsWith("GB ") || ((c.startsWith("GB/T")||c.startsWith("GB/Z")) && !(r.adopt||"").trim());
+  const tip = gb ? "去国家标准全文公开系统在线查看" : "官方页面挂着征求意见稿 PDF";
+  return '<a class="eye" href="'+esc(viewHref(r))+'" target="_blank" rel="noopener" title="'+tip+'">'+EYE_SVG+'</a>';
+}
+
+
+// ---- 收藏 / 最近看过：都存浏览器本地，不上传、不随文件走 ----
+// 收藏键名沿用上一版 mdstd_fav；旧版存的是「详情页链接+标准号」拼接串，
+// 这里两种形式都认，旧收藏能直接读出来，之后新收藏统一存标准号。
+const FAV_KEY="mdstd_fav", RECENT_KEY="mdstd_recent";
+let FAV=new Set(), RECENT=[];
+try{ FAV=new Set(JSON.parse(localStorage.getItem(FAV_KEY)||"[]")); }catch(e){ FAV=new Set(); }
+try{ const t=JSON.parse(localStorage.getItem(RECENT_KEY)||"[]"); if(Array.isArray(t)) RECENT=t; }catch(e){ RECENT=[]; }
+function isFav(r){ return FAV.has(r.code) || FAV.has(r.url+r.code); }
+function saveFav(){ try{ localStorage.setItem(FAV_KEY, JSON.stringify([...FAV])); }catch(e){} }
+function toggleFav(r){
+  if(isFav(r)){ FAV.delete(r.code); FAV.delete(r.url+r.code); }
+  else FAV.add(r.code);
+  saveFav(); render();
+}
+// 点标题就算「看过」：记标准号，最多留 50 条。这里只刷新左栏计数、不重排列表，
+// 否则正在看的列表会在点开的瞬间跳走。
+function markSeen(r){
+  RECENT = RECENT.filter(k=>k!==r.code && k!==(r.url||"")+r.code);
+  RECENT.unshift(r.code);
+  if(RECENT.length>50) RECENT = RECENT.slice(0,50);
+  try{ localStorage.setItem(RECENT_KEY, JSON.stringify(RECENT)); }catch(e){}
+  renderFilters();
+}
+function countRecent(){
+  const s=new Set(DATA.map(r=>r.code));
+  return RECENT.filter(k=>s.has(k)).length;
+}
+
+// 一级导航 = 药监局《医疗器械分类目录》22 个子目录（只列有条目的）+ 通用 + 未分类。
+// 标管中心那 43 个目录退到二级：选了大类才展开，避免「听诊器 1 条」这种碎片占满左栏。
+const NMPA_LBL={
+  "__uni__":"通用 · 不针对具体产品",
+  "__none__":"未分类 · 草案等无目录号"
+};
+function nmpaLabel(k){ return NMPA_LBL[k]||k; }
+// 卡片底部用短名：全称「通用 · 不针对具体产品」在小字里太长
+function nmpaShort(k){ return k==="__uni__"?"通用":k==="__none__"?"未分类":k; }
+function nmpaOrd(k){ if(k==="__uni__")return -1; if(k==="__none__")return 999; return parseInt(k)||500; }
+const S_CLS={"现行":"s0","即将实施":"s1","征求意见中":"s2"};
+// ---- 按用途：产品要求 / 材料标准 / 试验方法 ----
+// 这不是官方分类。药监局 22 类分的是「管什么产品」，标管中心目录分的是「归哪个技委会」，
+// 都不回答「这标准是干什么用的」。所以按标准名称判（规则在 scripts/build_page.py 的
+// role_of，判据写在那里带注释）：名称带「…的测定 / 试验方法」且不带「要求」的算方法；
+// 带「XX材料 / 粉料 / 加工材 / 专用料」且不带产品词的算材料；其余算产品要求。
+// 真材料标准本来就少——产品标准正文里提到的材料不算在内，那种要从卡片「适用范围」原文看。
+const ROLE_LBL={"要求":"产品要求","材料":"材料标准","方法":"试验方法"};
+const MAT_ORDER=["金属材料","高分子材料","陶瓷与无机材料","天然与生物源材料","其他材料"];
+
+function countBy(field){
+  const m={};
+  for(const r of DATA){const k=r[field]; if(k) m[k]=(m[k]||0)+1;}
+  return m;
+}
+const C_CAT1=countBy("cat1"), C_NMPA=countBy("nmpa");
+const C_ROLE=countBy("role"), C_MAT=countBy("mat");
+const CAT_NMPA={};
+for(const r of DATA){ if(r.cat1 && r.nmpa && !CAT_NMPA[r.cat1]) CAT_NMPA[r.cat1]=r.nmpa; }
+const NMPA_KEYS=Object.keys(C_NMPA).filter(k=>C_NMPA[k]).sort((a,b)=>nmpaOrd(a)-nmpaOrd(b));
+
+function mkBtn(host, key, n, on, cls, tip, onClick){
+  const b=document.createElement("button");
+  b.className="btn"+(cls?" "+cls:"")+(on?" on":"");
+  if(tip) b.title=tip;
+  b.innerHTML='<span>'+esc(key)+'</span><span class="n">'+n+'</span>';
+  b.onclick=onClick;
+  host.appendChild(b);
+}
+
+function renderFilters(){
+  // 我的：收藏 / 最近看过（照法规库那样放左栏第一格）
+  const hm=document.getElementById("f_mine"); hm.innerHTML="";
+  mkBtn(hm, "★ 收藏", DATA.filter(isFav).length, state.mine==="fav", "", "我收藏的标准", ()=>{
+    state.mine = (state.mine==="fav"?"":"fav"); state.page=1; render();
+  });
+  mkBtn(hm, "◷ 最近看过", countRecent(), state.mine==="recent", "", "点过标题的标准，最多留 50 条", ()=>{
+    state.mine = (state.mine==="recent"?"":"recent"); state.page=1; render();
+  });
+
+  // 按用途：产品要求 / 材料标准 / 试验方法。选中「材料标准」时在它下面直接展开材料种类，
+  // 少点一层（跟主题那边一个套路）。不做的三层树：左栏已经两格，再套三层就翻不动了。
+  const hr=document.getElementById("f_role"); hr.innerHTML="";
+  for(const k of ["要求","材料","方法"]){
+    mkBtn(hr, ROLE_LBL[k], C_ROLE[k]||0, state.role===k, "lvl1", "", ()=>{
+      state.role = (state.role===k ? "" : k);
+      if(!state.role) state.mat="";
+      state.page=1; render();
+    });
+    if(state.role===k && k==="材料"){
+      const box=document.createElement("div"); box.className="sub";
+      for(const g of MAT_ORDER){
+        const n=C_MAT[g]||0; if(!n) continue;
+        mkBtn(box, g, n, state.mat===g, "lvl2", "", ()=>{
+          state.mat=(state.mat===g?"":g); state.page=1; render();
+        });
+      }
+      hr.appendChild(box);
+    }
+  }
+
+  // 一级：药监局 22 类（只显示有条目的）+ 通用 + 未分类
+  // 二级不放在列表底部——选中哪一类，就在哪一类下面直接展开它的细目录
+  const ha=document.getElementById("f_area"); ha.innerHTML="";
+  for(const k of NMPA_KEYS){
+    const n=C_NMPA[k]||0; if(!n) continue;
+    mkBtn(ha, nmpaLabel(k), n, state.nmpa===k, "lvl1", "", ()=>{
+      state.nmpa = (state.nmpa===k ? "" : k);
+      state.cat1 = "";
+      state.page=1; render();
+    });
+    if(state.nmpa===k){
+      // 细目录的计数必须是「该大类 ∩ 该目录」的条数，不是原目录总数——
+      // 16 眼科这类是按名称从「医用光学和仪器」抽出来的，用总数会显示 188（对不上 131）
+      const sub={};
+      for(const r of DATA) if(r.nmpa===k && r.cat1) sub[r.cat1]=(sub[r.cat1]||0)+1;
+      // 差额 = 按名称归到该类、但自己没有细目录的条目（草案等）。不补这一项，
+      // 二级加和会小于一级总数，使用者会以为丢数。
+      const got=Object.values(sub).reduce((a,b)=>a+b,0);
+      if(got<C_NMPA[k]) sub["__nocat__"]=C_NMPA[k]-got;
+      const cats=Object.keys(sub).sort((a,b)=>
+        (a==="__nocat__"?1:0)-(b==="__nocat__"?1:0) || sub[b]-sub[a]);
+      if(cats.length>1){
+        const box=document.createElement("div"); box.className="sub";
+        for(const c of cats){
+          mkBtn(box, c==="__nocat__"?"（无细目录）":c, sub[c], state.cat1===c, "lvl2", "", ()=>{
+            state.cat1=(state.cat1===c?"":c); state.page=1; render();
+          });
+        }
+        ha.appendChild(box);
+      }
+    }
+  }
+  document.querySelectorAll(".pill").forEach(el=>el.classList.toggle("on", (el.dataset.s||"")===state.status));
+}
+
+function filtered(){
+  const q=state.q.trim().toLowerCase();
+  let rows = DATA.filter(r=>{
+    if(state.mine==="fav" && !isFav(r)) return false;
+    if(state.mine==="recent" && RECENT.indexOf(r.code)<0) return false;
+    if(state.nmpa && r.nmpa!==state.nmpa) return false;
+    if(state.status && r.status!==state.status) return false;
+    if(state.cat1==="__nocat__"){ if(r.cat1) return false; }
+    else if(state.cat1 && r.cat1!==state.cat1) return false;
+    if(state.role && r.role!==state.role) return false;
+    if(state.mat && r.mat!==state.mat) return false;
+    if(q){
+      // 搜名称之外还搜「适用范围」全文：搜「超高分子量聚乙烯」能同时命中材料标准和
+      // 写着「适用于由…超高分子量聚乙烯…制成」的产品标准，这是产品↔材料唯一的官方桥。
+      // 空格隔开的多个词是「都要有」：搜「髋关节 聚乙烯」= 既要髋关节、又要聚乙烯。
+      // 每个词先展开别名，任一别名出现就算这个词命中（搜 PTFE 等同搜聚四氟乙烯）。
+      const toks=tokensOf(q);
+      if(toks.length){
+        const hay=(r.code+" "+r.name+" "+(r.scope||"")).toLowerCase();
+        for(const tk of toks){
+          if(!termsOf(tk).some(x=>hay.includes(x))) return false;
+        }
+      }
+    }
+    return true;
+  });
+  // 最近看过按「看的先后」倒序，否则看不出哪条是刚看的
+  if(state.mine==="recent"){
+    rows = rows.slice().sort((a,b)=>RECENT.indexOf(a.code)-RECENT.indexOf(b.code));
+  }
+  return rows;
+}
+
+function render(){
+  renderFilters();
+  const rows=filtered();
+  const pages=Math.max(1,Math.ceil(rows.length/PER));
+  if(state.page>pages) state.page=pages;
+  const slice=rows.slice((state.page-1)*PER, state.page*PER);
+
+  const c=[];
+  if(state.mine==="fav") c.push('<span class="chip" data-c="mine">收藏 ×</span>');
+  if(state.mine==="recent") c.push('<span class="chip" data-c="mine">最近看过 ×</span>');
+  if(state.nmpa) c.push('<span class="chip" data-c="nmpa">主题：'+esc(nmpaLabel(state.nmpa))+' ×</span>');
+  if(state.cat1) c.push('<span class="chip" data-c="cat1">目录：'+esc(state.cat1==="__nocat__"?"无细目录":state.cat1)+' ×</span>');
+  if(state.role) c.push('<span class="chip" data-c="role">用途：'+esc(ROLE_LBL[state.role]||state.role)+' ×</span>');
+  if(state.mat) c.push('<span class="chip" data-c="mat">材料：'+esc(state.mat)+' ×</span>');
+  if(state.status) c.push('<span class="chip" data-c="status">状态：'+esc(state.status)+' ×</span>');
+  if(state.q) c.push('<span class="chip" data-c="q">搜索：'+esc(state.q)+' ×</span>');
+  const cr=document.getElementById("crumbs");
+  // 搜索时额外给两种颜色的条数：「名称命中」= 这份标准本身就是讲这个的；
+  // 「仅适用范围提到」= 正文里只带过一句。这个数字比颜色本身更有用。
+  let legend="";
+  if(state.q.trim() && rows.length){
+    let nN=0; for(const r of rows) if(hitPlace(r,state.q)==="name") nN++;
+    const nS=rows.length-nN;
+    legend='<span class="legend"><span><i style="background:#ffe27a"></i>名称命中 '+nN+' 条</span>'
+      +(nS?'<span><i style="background:#dbe9fb"></i>仅适用范围提到 '+nS+' 条</span>':'')+'</span>';
+  }
+  cr.innerHTML=(c.length?c.join(""):'<span>全部 '+rows.length+' 条</span>')
+    + (c.length?'<span style="margin-left:4px">共 '+rows.length+' 条</span>':'')
+    + legend;
+  cr.querySelectorAll(".chip").forEach(el=>{
+    el.onclick=()=>{const k=el.dataset.c;
+      if(k==="q"){state.q="";document.getElementById("q").value="";}
+      else if(k==="mine"){state.mine="";}
+      else {state[k]=""; if(k==="role") state.mat="";}
+      state.page=1; render();}
+  });
+
+  const list=document.getElementById("list");
+  if(!slice.length){
+    const hint=(state.nmpa||state.cat1)&&state.status==="征求意见中"
+      ? '<br>征求意见稿多数没有官方目录号，所以按产品类筛不到；去掉「主题」或点左侧「未分类 · 草案与早期废止」才能看到全部草案。'
+      : '';
+    list.innerHTML='<div class="empty">没有符合当前条件的标准。检查左侧筛选，或点上面的 × 去掉条件。'+hint+'</div>';
+  } else {
+    list.innerHTML=slice.map(r=>{
+      const on=isFav(r);
+      const bits=['<span class="st '+(S_CLS[r.status]||"s3")+'">'+esc(r.status)+'</span>'];
+      if(r.issue) bits.push((r.status==="征求意见中"?"征集 ":"发布 ")+esc(r.issue));
+      if(r.act) bits.push("实施 "+esc(r.act));
+      if(r.deadline) bits.push("意见截止 "+esc(r.deadline));
+      if(r.nmpa) bits.push(esc(nmpaShort(r.nmpa)));
+      if(r.vers>1) bits.push("同号共 "+r.vers+" 版");
+      const tags=(r.note?'<span class="tag">'+esc(r.note)+'</span>':'');
+      const i=DATA.indexOf(r);
+      const cls="card "+(S_CLS[r.status]||"");   // 左边框颜色跟着状态走
+      return '<div class="'+cls+'">'
+        +'<button class="fv'+(on?" on":"")+'" data-i="'+i+'" title="'+(on?"取消收藏":"收藏")+'">'+(on?"★":"☆")+'</button>'
+        +'<div class="body"><div class="t"><a href="'+esc(r.url)+'" target="_blank" rel="noopener" data-i="'+i+'">'
+        +hl(r.code,state.q,"hN")+'　'+hl(r.name,state.q,"hN")+'</a>'+(canView(r)?eyeOf(r):'')+tags+'</div><div class="m">'+bits.join(" · ")+'</div>'
+        +(r.scope?'<div class="sc'+(EXP.has(r.code)?" open":"")+'" data-i="'+i+'" title="点击展开/收起适用范围">'+hl(EXP.has(r.code)?r.scope:scShow(r.scope,state.q),state.q,"hS")+'</div>':'')
+        +'</div></div>';
+    }).join("");
+  }
+
+  const pg=document.getElementById("pager");
+  if(pages<=1){pg.innerHTML="";}
+  else{
+    let html="";
+    const add=(p,t,on)=>{html+='<button data-p="'+p+'"'+(on?' class="on"':'')+'>'+t+'</button>';};
+    if(state.page>1) add(state.page-1,"上一页");
+    const win=[1,pages];
+    for(let p=Math.max(1,state.page-2);p<=Math.min(pages,state.page+2);p++) win.push(p);
+    const uniq=[...new Set(win)].sort((a,b)=>a-b);
+    let last=0;
+    for(const p of uniq){ if(p-last>1) html+='<span style="color:#b9c4d4">…</span>'; add(p,p,state.page===p); last=p; }
+    if(state.page<pages) add(state.page+1,"下一页");
+    pg.innerHTML=html;
+    pg.querySelectorAll("button").forEach(b=>b.onclick=()=>{state.page=+b.dataset.p; render(); document.querySelector("main").scrollTo({top:0});});
+  }
+}
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+// 把命中词包成 <mark>。cls 只有两个：hN（名称/标准号）和 hS（适用范围）。
+// 必须在 esc 之后做，且匹配用的是「转义后」的文本长度——否则 q 里带 & < > 时
+// 切出来的片段会错位，把标签切断。
+function hl(text, q, cls){
+  const t=esc(text);
+  const toks=tokensOf(q);
+  if(!toks.length) return t;
+  // 每个词连同它的别名一起算高亮目标
+  const terms=[];
+  for(const tk of toks) for(const x of termsOf(tk)){ const e=esc(x).toLowerCase(); if(e) terms.push(e); }
+  const low=t.toLowerCase();
+  // 先把所有命中区间找出来，再合并重叠（「聚四氟乙烯」和「聚四氟」会重叠，
+  // 不合并就会套出 mark 里面再套 mark）
+  const spans=[];
+  for(const term of terms){
+    let i=0,k;
+    while((k=low.indexOf(term,i))>=0){ spans.push([k,k+term.length]); i=k+term.length; }
+  }
+  if(!spans.length) return t;
+  spans.sort((a,b)=> a[0]-b[0] || b[1]-a[1]);
+  const mg=[];
+  for(const s of spans){
+    const last=mg[mg.length-1];
+    if(last && s[0]<last[1]){ if(s[1]>last[1]) last[1]=s[1]; }
+    else mg.push([s[0],s[1]]);
+  }
+  let out="", i=0;
+  for(const [a,b] of mg){ out += t.slice(i,a)+'<mark class="'+cls+'">'+t.slice(a,b)+'</mark>'; i=b; }
+  return out+t.slice(i);
+}
+// 适用范围默认只显示一行（CSS 截断）。如果命中词落在这一行之外，卡片上就看不见
+// 高亮，人只会疑惑「这条为什么出来」。所以命中靠后时把显示起点挪到命中词前面，
+// 命中词一定在可见的那一行里。展开时在点击处换回全文（见下面的 sc 点击处理）。
+function scShow(text, q){
+  const s=String(text||"");
+  const toks=tokensOf(q);
+  if(!toks.length) return s;
+  const low=s.toLowerCase();
+  let best=-1;
+  for(const tk of toks) for(const x of termsOf(tk)){
+    const k=low.indexOf(x);
+    if(k>=0 && (best<0 || k<best)) best=k;
+  }
+  if(best<0 || best<=14) return s;
+  return "…"+s.slice(best-12);
+}
+// 这条标准的命中来自哪里：name=标准号或名称里就有，scope=只有适用范围提到
+function hitPlace(r, q){
+  const toks=tokensOf(q);
+  if(!toks.length) return "";
+  const nm=(r.code+" "+r.name).toLowerCase();
+  const inName=tk=>termsOf(tk).some(x=>nm.includes(x));
+  return toks.every(inName) ? "name" : "scope";
+}
+
+document.querySelectorAll(".pill").forEach(el=>{
+  el.onclick=()=>{const s=el.dataset.s||""; state.status=(state.status===s?"":s); state.page=1; render();};
+});
+document.getElementById("nAll").textContent=STATS["all"]||DATA.length;
+document.getElementById("n1").textContent=STATS["现行"]||0;
+document.getElementById("n2").textContent=STATS["即将实施"]||0;
+document.getElementById("n4").textContent=STATS["征求意见中"]||0;
+
+// 星标切换收藏；点标题记「最近看过」（不拦跳转）
+document.getElementById("list").addEventListener("click",e=>{
+  const fv=e.target.closest(".fv");
+  if(fv){ e.preventDefault(); e.stopPropagation();
+    const r=DATA[+fv.dataset.i]; if(r) toggleFav(r); return; }
+  const sc=e.target.closest(".card .sc");
+  if(sc){ e.preventDefault(); const r=DATA[+sc.dataset.i];
+    if(r){
+      if(EXP.has(r.code)){
+        EXP.delete(r.code); sc.classList.remove("open");
+        // 收起时换回以命中词为起点的短版——否则展开再收起，高亮又跑出可见行了
+        sc.innerHTML=hl(scShow(r.scope,state.q),state.q,"hS");
+      } else {
+        EXP.add(r.code); sc.classList.add("open");
+        sc.innerHTML=hl(r.scope,state.q,"hS");   // 展开看全文，高亮照留
+      }
+    } return; }
+  const a=e.target.closest(".card .t a");
+  if(a){ const r=DATA[+a.dataset.i]; if(r) markSeen(r); }
+});
+let timer=null;
+document.getElementById("q").oninput=e=>{
+  clearTimeout(timer);
+  timer=setTimeout(()=>{state.q=e.target.value; state.page=1; render();},200);
+};
+
+render();
+</script>
+</body>
+</html>
