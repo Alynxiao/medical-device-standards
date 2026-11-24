@@ -46,20 +46,15 @@
 
 ## 运行条件
 
-三样，缺一不可：
-
 | 条件 | 说明 |
 |---|---|
-| **Python 3.8 以上** | 唯一必须装的东西。没有就去 python.org 下载，安装时**勾选 Add Python to PATH**（这一步漏了就会提示找不到 Python） |
-| **能联网** | 拉数据要访问三个官方站：标管中心目录库、行标备案库、征求意见栏目 |
-| **浏览器** | 看生成好的页面用，系统自带的就行 |
+| Python 3.8 以上 | python.org 下载，安装时勾选 Add Python to PATH |
+| 能联网 | 拉数据用 |
+| 浏览器 | 看页面用，系统自带的就行 |
 
-**不需要装任何第三方包。** 脚本只用了 Python 自带的库（`urllib`、`json`、`re`、`concurrent.futures` 这些），没有 `requests`、没有 `pandas`、没有浏览器内核。装包不是可选项，`启动.bat` 里也不会多一步 pip。
+不需要装任何第三方包。
 
-Windows：双击 `启动.bat`，它会自己找 `python` 或 `py`。
-Mac / Linux：`python3 run.py`（`.bat` 用不了）。
-
-解压到哪都行，路径带中文没问题（实测过）。
+Windows 双击 `启动.bat`；Mac / Linux 用 `python3 run.py`。
 
 ## 页面能做什么
 
