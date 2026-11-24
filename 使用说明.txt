@@ -43,7 +43,7 @@
   · 能联网（拉数据用）
   · 浏览器（看页面用，系统自带的就行）
 
-  不需要装任何第三方包。
+  只需要装 Python，别的什么都不用装。
 
   Windows 双击 启动.bat；Mac / Linux 用 python3 run.py。
 
